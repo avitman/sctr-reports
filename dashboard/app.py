@@ -987,8 +987,14 @@ def main():
                 "EARN_DATE", "EARN_DAYS",
             ]
             display_cols = [c for c in all_day_cols if c in day_df.columns]
+            display_day_df = day_df[display_cols].sort_values("SCTR", ascending=False).copy()
+            for _vol_col in ["VOLUME", "VLAST1D", "VLAST2D"]:
+                if _vol_col in display_day_df.columns:
+                    display_day_df[_vol_col] = display_day_df[_vol_col].apply(
+                        lambda x: f"{int(x):,}" if pd.notna(x) else ""
+                    )
             st.dataframe(
-                day_df[display_cols].sort_values("SCTR", ascending=False),
+                display_day_df,
                 use_container_width=True,
                 hide_index=True,
                 column_config={
@@ -1005,9 +1011,9 @@ def main():
                     "ATR":        st.column_config.NumberColumn("ATR $", format="$%.2f"),
                     "VWAP":       st.column_config.NumberColumn("VWAP $", format="$%.2f"),
                     "AVWAP":      st.column_config.NumberColumn("AVWAP $", format="$%.2f"),
-                    "VOLUME":     st.column_config.NumberColumn("Volume"),
-                    "VLAST1D":    st.column_config.NumberColumn("Vol 1D"),
-                    "VLAST2D":    st.column_config.NumberColumn("Vol 2D"),
+                    "VOLUME":     st.column_config.TextColumn("Volume"),
+                    "VLAST1D":    st.column_config.TextColumn("Vol 1D"),
+                    "VLAST2D":    st.column_config.TextColumn("Vol 2D"),
                     "MA10":       st.column_config.NumberColumn("MA10 $", format="$%.2f"),
                     "MA20":       st.column_config.NumberColumn("MA20 $", format="$%.2f"),
                     "MA50":       st.column_config.NumberColumn("MA50 $", format="$%.2f"),
