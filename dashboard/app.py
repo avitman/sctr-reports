@@ -240,6 +240,30 @@ def fetch_weekly_pullbacks(symbols: tuple) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("DROP_PCT", ascending=False).reset_index(drop=True)
 
 
+@st.cache_data(ttl=1800)
+def fetch_trending_stocktwits() -> pd.DataFrame:
+    """Fetch currently trending symbols from StockTwits public API."""
+    import requests
+    try:
+        resp = requests.get(
+            "https://api.stocktwits.com/api/2/trending/symbols.json",
+            timeout=10,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        resp.raise_for_status()
+        rows = [
+            {
+                "SYMBOL": s["symbol"],
+                "ST_NAME": s.get("title", ""),
+                "WATCHLIST_COUNT": s.get("watchlist_count", 0),
+            }
+            for s in resp.json().get("symbols", [])
+        ]
+        return pd.DataFrame(rows) if rows else pd.DataFrame()
+    except Exception:
+        return pd.DataFrame()
+
+
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 def badge(value, thresholds, labels, colors):
     """Return colored HTML badge."""
@@ -330,10 +354,11 @@ def main():
         ]
 
     # ── Tabs ──────────────────────────────────────────────────────────────────
-    tab1, tab_swing, tab_pullback, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab_swing, tab_pullback, tab_social, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "🏆 Top Picks",
         "⚡ Short-Term Swing",
         "📉 Weekly Pullback",
+        "📣 Social Buzz",
         "📊 Sector Analysis",
         "🔍 Stock Deep Dive",
         "📅 Daily History",
@@ -684,6 +709,101 @@ def main():
                         },
                         hide_index=True,
                     )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # TAB — SOCIAL BUZZ
+    # ══════════════════════════════════════════════════════════════════════════
+    with tab_social:
+        st.subheader("📣 Social Buzz — Trending on StockTwits")
+        st.caption(
+            "Top symbols trending on StockTwits right now, cross-referenced with your SCTR scanner. "
+            "Stocks appearing in **both** social trending and the SCTR scanner are the highest-conviction candidates."
+        )
+
+        with st.spinner("Fetching trending symbols from StockTwits…"):
+            trending_df = fetch_trending_stocktwits()
+
+        if trending_df.empty:
+            st.warning("Could not fetch trending data from StockTwits. Try again later.")
+        else:
+            score_ctx = scores[["SYMBOL", "LATEST_SCTR", "SCTR_MOMENTUM", "LATEST_RSI",
+                                 "SECTOR", "NAME", "SCORE", "CONSISTENCY_PCT",
+                                 "IN_LATEST", "EARN_DAYS"]].copy()
+            merged = trending_df.merge(score_ctx, on="SYMBOL", how="left")
+            merged["NAME"] = merged["NAME"].fillna(merged["ST_NAME"])
+            merged["IN_SCTR"] = merged["LATEST_SCTR"].notna()
+
+            in_both = int(merged["IN_SCTR"].sum())
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Trending on StockTwits", len(merged))
+            c2.metric("Also in SCTR Scanner", in_both)
+            c3.metric("Overlap", f"{in_both / len(merged) * 100:.0f}%")
+
+            st.divider()
+
+            fig_social = px.bar(
+                merged.sort_values("WATCHLIST_COUNT", ascending=False),
+                x="SYMBOL", y="WATCHLIST_COUNT",
+                color="IN_SCTR",
+                color_discrete_map={True: "#27ae60", False: "#95a5a6"},
+                hover_data=["NAME", "LATEST_SCTR", "SCORE", "SECTOR"],
+                title="StockTwits Trending — Watchlist Count (green = also in SCTR scanner)",
+                labels={"WATCHLIST_COUNT": "Watchlist Count", "IN_SCTR": "In SCTR"},
+            )
+            fig_social.update_layout(height=400, xaxis_tickangle=45)
+            st.plotly_chart(fig_social, use_container_width=True)
+
+            st.subheader("🎯 SCTR + Social Intersection")
+            st.caption("Trending socially AND in the SCTR scanner — sorted by SCTR score.")
+
+            intersection = merged[merged["IN_SCTR"]].sort_values("SCORE", ascending=False)
+
+            if intersection.empty:
+                st.info("No overlap between trending symbols and SCTR scanner right now.")
+            else:
+                for _, row in intersection.iterrows():
+                    with st.container():
+                        c1, c2, c3, c4 = st.columns([2, 1, 1, 2])
+                        c1.markdown(f"**{row['SYMBOL']}** — {row.get('NAME', '')}")
+                        c1.caption(row.get("SECTOR", ""))
+
+                        score_val = row.get("SCORE")
+                        sctr_val = row.get("LATEST_SCTR")
+                        c2.metric("SCTR Score", f"{score_val:.1f}" if pd.notna(score_val) else "—")
+                        c2.metric("SCTR", f"{sctr_val:.1f}" if pd.notna(sctr_val) else "—")
+
+                        c3.metric("Watchlist", f"{int(row['WATCHLIST_COUNT']):,}")
+                        c3.markdown(rsi_badge(row.get("LATEST_RSI")), unsafe_allow_html=True)
+
+                        consistency = row.get("CONSISTENCY_PCT")
+                        if pd.notna(consistency):
+                            c4.caption(f"Consistency: {consistency:.0f}%")
+                        if row.get("IN_LATEST"):
+                            c4.markdown(
+                                '<span style="background:#27ae60;color:white;padding:2px 8px;'
+                                'border-radius:10px;font-size:0.85em">✓ In Today\'s List</span>',
+                                unsafe_allow_html=True,
+                            )
+                        c4.markdown(earn_badge(row.get("EARN_DAYS")), unsafe_allow_html=True)
+                        st.markdown("---")
+
+            with st.expander("Full trending table"):
+                display_social_cols = [c for c in [
+                    "SYMBOL", "NAME", "WATCHLIST_COUNT", "IN_SCTR",
+                    "LATEST_SCTR", "SCORE", "SECTOR", "LATEST_RSI", "CONSISTENCY_PCT", "EARN_DAYS",
+                ] if c in merged.columns]
+                st.dataframe(
+                    merged[display_social_cols].sort_values("WATCHLIST_COUNT", ascending=False),
+                    use_container_width=True,
+                    column_config={
+                        "WATCHLIST_COUNT": st.column_config.NumberColumn("Watchlist Count", format="%d"),
+                        "IN_SCTR": st.column_config.CheckboxColumn("In SCTR"),
+                        "SCORE": st.column_config.ProgressColumn("SCTR Score", min_value=0, max_value=100),
+                        "LATEST_SCTR": st.column_config.NumberColumn("SCTR", format="%.1f"),
+                        "CONSISTENCY_PCT": st.column_config.NumberColumn("Consistency %", format="%.0f%%"),
+                    },
+                    hide_index=True,
+                )
 
     # ══════════════════════════════════════════════════════════════════════════
     # TAB 2 — SECTOR ANALYSIS
