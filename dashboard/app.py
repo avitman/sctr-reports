@@ -976,13 +976,45 @@ def main():
                                      title="Sector Distribution for This Day")
                 st.plotly_chart(fig_day_sec, use_container_width=True)
 
-            # Table
-            display_cols = [c for c in ["RANK", "SYMBOL", "NAME", "SECTOR", "SCTR", "RSI",
-                                        "LAST", "ATR", "VOLUME", "EARN_DAYS"] if c in day_df.columns]
+            # Table — all fields
+            all_day_cols = [
+                "RANK", "SYMBOL", "NAME", "SECTOR", "INDUSTRY", "MARKET CAP",
+                "SCTR", "SCTR_CHG",
+                "LAST", "CHG", "CHG%", "LAST1D", "LAST2D",
+                "RSI", "ATR", "VWAP", "AVWAP",
+                "VOLUME", "VLAST1D", "VLAST2D",
+                "MA10", "MA20", "MA50", "MA150",
+                "EARN_DATE", "EARN_DAYS",
+            ]
+            display_cols = [c for c in all_day_cols if c in day_df.columns]
             st.dataframe(
                 day_df[display_cols].sort_values("SCTR", ascending=False),
                 use_container_width=True,
-                hide_index=True
+                hide_index=True,
+                column_config={
+                    "RANK":       st.column_config.NumberColumn("Rank", format="%d"),
+                    "MARKET CAP": st.column_config.NumberColumn("Mkt Cap", format="$%d"),
+                    "SCTR":       st.column_config.NumberColumn("SCTR", format="%.1f"),
+                    "SCTR_CHG":   st.column_config.NumberColumn("SCTR Chg", format="%+.1f"),
+                    "LAST":       st.column_config.NumberColumn("Last $", format="$%.2f"),
+                    "CHG":        st.column_config.NumberColumn("Chg $", format="$%+.2f"),
+                    "CHG%":       st.column_config.NumberColumn("Chg %", format="%+.2f%%"),
+                    "LAST1D":     st.column_config.NumberColumn("Last 1D $", format="$%.2f"),
+                    "LAST2D":     st.column_config.NumberColumn("Last 2D $", format="$%.2f"),
+                    "RSI":        st.column_config.NumberColumn("RSI", format="%.1f"),
+                    "ATR":        st.column_config.NumberColumn("ATR $", format="$%.2f"),
+                    "VWAP":       st.column_config.NumberColumn("VWAP $", format="$%.2f"),
+                    "AVWAP":      st.column_config.NumberColumn("AVWAP $", format="$%.2f"),
+                    "VOLUME":     st.column_config.NumberColumn("Volume", format="%d"),
+                    "VLAST1D":    st.column_config.NumberColumn("Vol 1D", format="%d"),
+                    "VLAST2D":    st.column_config.NumberColumn("Vol 2D", format="%d"),
+                    "MA10":       st.column_config.NumberColumn("MA10 $", format="$%.2f"),
+                    "MA20":       st.column_config.NumberColumn("MA20 $", format="$%.2f"),
+                    "MA50":       st.column_config.NumberColumn("MA50 $", format="$%.2f"),
+                    "MA150":      st.column_config.NumberColumn("MA150 $", format="$%.2f"),
+                    "EARN_DATE":  st.column_config.TextColumn("Earn Date"),
+                    "EARN_DAYS":  st.column_config.NumberColumn("Earn Days", format="%d"),
+                },
             )
 
     # ══════════════════════════════════════════════════════════════════════════
