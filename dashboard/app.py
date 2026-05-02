@@ -354,7 +354,7 @@ def main():
         ]
 
     # ── Tabs ──────────────────────────────────────────────────────────────────
-    tab1, tab_swing, tab_pullback, tab_social, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    tab1, tab_swing, tab_pullback, tab_social, tab2, tab3, tab4, tab6 = st.tabs([
         "🏆 Top Picks",
         "⚡ Short-Term Swing",
         "📉 Weekly Pullback",
@@ -362,7 +362,6 @@ def main():
         "📊 Sector Analysis",
         "🔍 Stock Deep Dive",
         "📅 Daily History",
-        "🗃️ Full Rankings",
         "📄 Spec",
     ])
 
@@ -1022,35 +1021,6 @@ def main():
                     "EARN_DAYS":  st.column_config.NumberColumn("Earn Days", format="%d"),
                 },
             )
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # TAB 5 — FULL RANKINGS
-    # ══════════════════════════════════════════════════════════════════════════
-    with tab5:
-        st.subheader("Full Scored Rankings (All Symbols)")
-
-        display_score_cols = [c for c in [
-            "SYMBOL", "NAME", "SECTOR", "SCORE", "LATEST_SCTR", "SCTR_MOMENTUM",
-            "CONSISTENCY_PCT", "TOTAL_APPEARANCES", "LATEST_RSI", "VOLUME_TREND",
-            "AVG_VOLUME", "EARN_DAYS", "LAST", "IN_LATEST"
-        ] if c in filtered.columns]
-
-        st.dataframe(
-            filtered[display_score_cols].reset_index(drop=True),
-            use_container_width=True,
-            column_config={
-                "SCORE": st.column_config.ProgressColumn("Score", min_value=0, max_value=100),
-                "CONSISTENCY_PCT": st.column_config.NumberColumn("Consistency %", format="%.0f%%"),
-                "LATEST_SCTR": st.column_config.NumberColumn("SCTR", format="%.1f"),
-                "SCTR_MOMENTUM": st.column_config.NumberColumn("SCTR Mom.", format="%+.1f"),
-                "VOLUME_TREND": st.column_config.NumberColumn("Vol Trend %", format="%+.0f%%"),
-                "IN_LATEST": st.column_config.CheckboxColumn("In Today's List"),
-            },
-            hide_index=False,
-        )
-
-        csv_out = filtered[display_score_cols].to_csv(index=False).encode()
-        st.download_button("Download Rankings CSV", csv_out, "sctr_rankings.csv", "text/csv")
 
     # ══════════════════════════════════════════════════════════════════════════
     # TAB 6 — SPEC
