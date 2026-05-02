@@ -353,6 +353,21 @@ def main():
             filtered["EARN_DAYS"].isna() | (filtered["EARN_DAYS"] >= exclude_earnings_days)
         ]
 
+    # ── Tab Guide ─────────────────────────────────────────────────────────────
+    with st.expander("📖 Tab Guide"):
+        st.markdown("""
+| Tab | What you can do |
+|---|---|
+| **🏆 Top Picks** | Highest-conviction stocks ranked by a composite score (SCTR, consistency, momentum, volume, RSI, earnings safety). Best for finding long-term swing candidates. |
+| **⚡ Short-Term Swing** | Today's stocks ranked for 1–5 day trades. Includes ATR-based entry, stop, and take-profit levels calculated automatically. |
+| **📉 Weekly Pullback** | Strong stocks (high SCTR) that dropped significantly this week — potential mean-reversion entries at a discount. |
+| **📣 Social Buzz** | Stocks trending on StockTwits right now, cross-referenced with the SCTR scanner — social hype backed by technical strength. |
+| **📊 Sector Analysis** | Which sectors dominate the scanner, which are trending up or down recently, and how sector rotation is moving over time. |
+| **🔍 Stock Deep Dive** | Pick any single stock and see its full history — SCTR over time, price vs moving averages, volume trend, RSI history. |
+| **📅 Daily History** | Browse the full scanner list for any past date — see every stock that appeared and all its metrics on that day. |
+| **📄 Spec** | Technical documentation of how the dashboard and scoring work. |
+        """)
+
     # ── Tabs ──────────────────────────────────────────────────────────────────
     tab1, tab_swing, tab_pullback, tab_social, tab2, tab3, tab4, tab6 = st.tabs([
         "🏆 Top Picks",
