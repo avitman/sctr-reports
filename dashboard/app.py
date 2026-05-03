@@ -21,7 +21,7 @@ st.set_page_config(
     page_title="SCTR Investment Dashboard",
     page_icon="📈",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ─── Data Loading ─────────────────────────────────────────────────────────────
@@ -310,9 +310,10 @@ def main():
     date_range = f"{df['DATE'].min().strftime('%b %d, %Y')} → {latest_date.strftime('%b %d, %Y')}"
 
     # ── Top KPIs ──────────────────────────────────────────────────────────────
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2 = st.columns(2)
     col1.metric("Trading Days Analyzed", total_days)
     col2.metric("Unique Stocks Ever", df["SYMBOL"].nunique())
+    col3, col4 = st.columns(2)
     col3.metric("Date Range", date_range)
     col4.metric("Today's List Size", df[df["DATE"] == latest_date].shape[0])
 
@@ -413,17 +414,16 @@ def main():
             # Card view
             for _, row in top.iterrows():
                 with st.container():
-                    c1, c2, c3, c4, c5 = st.columns([2, 1, 1, 1, 3])
+                    c1, c2, c3 = st.columns([3, 1, 1])
                     c1.markdown(f"**{row['SYMBOL']}** — {row.get('NAME', '')}")
                     c1.caption(f"{row.get('SECTOR', '')} | {row.get('INDUSTRY', '')}")
-
                     c2.metric("Score", f"{row['SCORE']:.1f}")
                     c2.metric("SCTR", f"{row['LATEST_SCTR']:.1f}")
-
-                    c3.metric("Consistency", f"{row['CONSISTENCY_PCT']:.0f}%")
                     mom = row.get("SCTR_MOMENTUM", 0) or 0
-                    c3.metric("SCTR Momentum", f"{mom:+.1f}", delta_color="normal")
+                    c3.metric("Consistency", f"{row['CONSISTENCY_PCT']:.0f}%")
+                    c3.metric("SCTR Mom.", f"{mom:+.1f}", delta_color="normal")
 
+                    c4, c5 = st.columns([1, 2])
                     rsi = row.get("LATEST_RSI")
                     c4.markdown(rsi_badge(rsi), unsafe_allow_html=True)
                     earn = row.get("EARN_DAYS")
@@ -431,7 +431,6 @@ def main():
                     vol_trend = row.get("VOLUME_TREND")
                     if pd.notna(vol_trend):
                         c4.caption(f"Vol trend: {vol_trend:+.0f}%")
-
                     last = row.get("LAST")
                     atr = row.get("ATR")
                     if pd.notna(last):
@@ -541,19 +540,18 @@ def main():
             # ── Card view ──
             for _, row in top_swing.iterrows():
                 with st.container():
-                    c1, c2, c3, c4, c5 = st.columns([2, 1, 1, 1, 3])
+                    c1, c2, c3 = st.columns([3, 1, 1])
                     c1.markdown(f"**{row['SYMBOL']}** — {row.get('NAME', '')}")
                     c1.caption(f"{row.get('SECTOR', '')} | {row.get('INDUSTRY', '')}")
-
                     c2.metric("Swing Score", f"{row['SWING_SCORE']:.1f}")
                     c2.metric("SCTR", f"{row['SCTR']:.1f}")
-
                     rsi_val = row.get("RSI")
                     chg_val = row.get("CHG%")
                     c3.metric("RSI", f"{rsi_val:.1f}" if pd.notna(rsi_val) else "—")
                     c3.metric("CHG%", f"{chg_val:+.2f}%" if pd.notna(chg_val) else "—",
                               delta_color="normal")
 
+                    c4, c5 = st.columns([1, 2])
                     vol_exp = row.get("VOL_EXPANSION")
                     c4.metric("Vol Expansion", f"{vol_exp:+.0f}%" if pd.notna(vol_exp) else "—")
                     c4.markdown(earn_badge(row.get("EARN_DAYS")), unsafe_allow_html=True)
@@ -777,28 +775,27 @@ def main():
             else:
                 for _, row in intersection.iterrows():
                     with st.container():
-                        c1, c2, c3, c4 = st.columns([2, 1, 1, 2])
+                        c1, c2, c3 = st.columns([3, 1, 1])
                         c1.markdown(f"**{row['SYMBOL']}** — {row.get('NAME', '')}")
                         c1.caption(row.get("SECTOR", ""))
-
                         score_val = row.get("SCORE")
                         sctr_val = row.get("LATEST_SCTR")
                         c2.metric("SCTR Score", f"{score_val:.1f}" if pd.notna(score_val) else "—")
                         c2.metric("SCTR", f"{sctr_val:.1f}" if pd.notna(sctr_val) else "—")
-
                         c3.metric("Watchlist", f"{int(row['WATCHLIST_COUNT']):,}")
                         c3.markdown(rsi_badge(row.get("LATEST_RSI")), unsafe_allow_html=True)
 
+                        c4, c5 = st.columns([1, 2])
                         consistency = row.get("CONSISTENCY_PCT")
                         if pd.notna(consistency):
                             c4.caption(f"Consistency: {consistency:.0f}%")
+                        c4.markdown(earn_badge(row.get("EARN_DAYS")), unsafe_allow_html=True)
                         if row.get("IN_LATEST"):
-                            c4.markdown(
+                            c5.markdown(
                                 '<span style="background:#27ae60;color:white;padding:2px 8px;'
                                 'border-radius:10px;font-size:0.85em">✓ In Today\'s List</span>',
                                 unsafe_allow_html=True,
                             )
-                        c4.markdown(earn_badge(row.get("EARN_DAYS")), unsafe_allow_html=True)
                         st.markdown("---")
 
             with st.expander("Full trending table"):
