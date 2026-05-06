@@ -6,6 +6,25 @@
 
 ---
 
+## What is SCTR?
+
+**StockCharts Technical Rank (SCTR)** is a score from **0 to 99.99** that ranks a stock's technical strength relative to other stocks in the same market-cap group. A score of 50 means average performance; scores above 60 indicate above-average technical strength; scores in the 90s place the stock in the top tier of its peer group.
+
+The score combines **six technical indicators across three timeframes**:
+
+| Timeframe | Weight | Indicators |
+|---|---|---|
+| Long-term | 60% | % above/below 200-day EMA · 125-day Rate of Change |
+| Medium-term | 30% | % above/below 50-day EMA · 20-day Rate of Change |
+| Short-term | 10% | 14-day RSI · 3-day slope of PPO histogram |
+
+Because SCTR is a *relative* rank, a stock's score can rise or fall based on what other stocks in its group are doing — even if its own price barely moves.
+
+📊 **Live SCTR Report:** [stockcharts.com/freecharts/sctr.html](https://stockcharts.com/freecharts/sctr.html)
+📖 **Full methodology:** [StockCharts ChartSchool — SCTR](https://chartschool.stockcharts.com/table-of-contents/technical-indicators-and-overlays/technical-indicators/stockcharts-technical-rank)
+
+---
+
 ## Business Specification: SCTR Daily Scanner Report
 
 ### 1. Background
